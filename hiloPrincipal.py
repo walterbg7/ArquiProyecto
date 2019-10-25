@@ -14,6 +14,8 @@ class HiloPrincipal():
         self.memInst = []   # Lista para almacenar las instrucciones
         self.candadoDatos = threading.Lock() # Candado para la memoria de datos
         self.candadoInst = threading.Lock() # Candado para la memoria de Instrucciones
+        self.candadoBusDatos = threading.Lock()
+        self.candadoBusInst = threading.Lock()
     
     def run(self):
         # Se llena la memoria de Datos
@@ -42,4 +44,18 @@ class HiloPrincipal():
             
     def llenarMenInst(self):
         print("Llenando... jaja")
-        
+        for arch in range(0,6):
+            nombre_archivo = str(arch) + ".txt"
+            f = open(nombre_archivo, 'r')
+            contenido = f.read()
+            print(contenido)
+            instrucciones = contenido.split("\n")
+            for instruccion in instrucciones:
+                entero = instruccion.split(" ")
+                for i in entero:
+                    try:
+                        self.memInst.append(int(i))
+                    except ValueError:
+                        pass
+            f.close()
+        print(self.memInst)

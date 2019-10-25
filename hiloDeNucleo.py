@@ -26,6 +26,10 @@ class HiloDeNucleo():
         self.candadoInst = candadoI
         # Candado para la memoria de datos
         self.candadoDatos = candadoD
+        # Instruction Register
+        self.instReg = []
+        # Program Counter
+        self.progCount = -1
         
         
     def run(self):
