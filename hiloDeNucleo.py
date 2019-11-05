@@ -58,7 +58,7 @@ class HiloDeNucleo():
             print("\n",self.memDatos,"\n")
             self.candadoDatos.release()
         else:
-            self.candadoDatos.acquire()
+            self.candadoBusDatos.acquire()
             print("\n",self.memDatos,"\n")
-            self.candadoDatos.release()
+            self.candadoBusDatos.release()
             

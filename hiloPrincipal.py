@@ -40,20 +40,37 @@ class HiloPrincipal():
             self.memDatos.append(i*4)
         print(self.memDatos)
             
+    
+    def llenarTCB(self, pc, nombre_archivo):
+        registros = []
+        for i in range(0,31):
+            registros.append(0)
+        diccionario = {'PC':pc,'Registros:':registros, 'id_nucleo':-1, 
+        'id_hilillo':nombre_archivo, 'estado':0}
+        self.tcb.append(diccionario)
+    
     def llenarMenInst(self):
         print("Llenando... jaja")
-        for arch in range(0,6):
+        indiceMemInst = 383
+        for arch in range(0,7):
             nombre_archivo = str(arch) + ".txt"
             f = open(nombre_archivo, 'r')
             contenido = f.read()
             print(contenido)
             instrucciones = contenido.split("\n")
+            #contadorInst = 1
+            ponerEnTCB = False
             for instruccion in instrucciones:
                 entero = instruccion.split(" ")
                 for i in entero:
                     try:
                         self.memInst.append(int(i))
+                        indiceMemInst += 1
+                        if(ponerEnTCB == False): # Para solo meter la primera instruccion de cada hilillo
+                            self.llenarTCB(indiceMemInst, arch)
+                            ponerEnTCB = True
                     except ValueError:
                         pass
             f.close()
         print(self.memInst)
+        print(self.tcb)
