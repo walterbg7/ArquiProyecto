@@ -53,12 +53,12 @@ class HiloDeNucleo():
         # Prueba de locks
         print("Nucleo ",self.id," listo \n")
         if (self.id == 0):
-            self.candadoDatos.acquire()
+            self.busDatos.acquire()
             self.memDatos[0] = 7
             print("\n",self.memDatos,"\n")
-            self.candadoDatos.release()
+            self.busDatos.release()
         else:
-            self.candadoBusDatos.acquire()
+            self.busDatos.acquire()
             print("\n",self.memDatos,"\n")
-            self.candadoBusDatos.release()
+            self.busDatos.release()
             
