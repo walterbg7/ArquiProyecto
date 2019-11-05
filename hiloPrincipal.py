@@ -14,6 +14,7 @@ class HiloPrincipal():
         self.memDatos = []  # Lista para almacenar los datos
         self.candadoBusInst = threading.Lock() # Candado para aceso a la memoria de Instrucciones
         self.candadoBusDatos = threading.Lock() # Candado para aceso a la memoria de datos
+        self.candadoTCB = threading.Lock() # Candado para acceso a la TCB
     
     def run(self):
         # Se llena la memoria de Datos
@@ -21,13 +22,13 @@ class HiloPrincipal():
         # Se llena la memoria de Instrucciones
         self.llenarMenInst()
         # Se crea el nucleo 0
-        nucleo0 = hiloDeNucleo.HiloDeNucleo(0, self.tcb, self.memInst, self.memDatos, self.candadoBusInst, self.candadoBusDatos)
+        nucleo0 = hiloDeNucleo.HiloDeNucleo(0, self.tcb, self.memInst, self.memDatos, self.candadoBusInst, self.candadoBusDatos, self.candadoTCB)
         # Se crea el hilo
         nucleo0Thread = threading.Thread(target=nucleo0.run, args=())
         # Se corre el hilo
         nucleo0Thread.start()
         # Se crea el nucleo 1
-        nucleo1 = hiloDeNucleo.HiloDeNucleo(1, self.tcb, self.memInst, self.memDatos, self.candadoBusInst, self.candadoBusDatos)
+        nucleo1 = hiloDeNucleo.HiloDeNucleo(1, self.tcb, self.memInst, self.memDatos, self.candadoBusInst, self.candadoBusDatos, self.candadoTCB)
         # Se crea el hilo
         nucleo1Thread = threading.Thread(target=nucleo1.run, args=())
         # Se corre el hilo
@@ -40,12 +41,12 @@ class HiloPrincipal():
             self.memDatos.append(i*4)
         print(self.memDatos)
             
-    
+    # Se crea una lista de diccionarios, donde cada indice de la lista es 
     def llenarTCB(self, pc, nombre_archivo):
         registros = []
         for i in range(0,31):
             registros.append(0)
-        diccionario = {'PC':pc,'Registros:':registros, 'id_nucleo':-1, 
+        diccionario = {'PC':pc,'Registros':registros, 'id_nucleo':-1, 
         'id_hilillo':nombre_archivo, 'estado':0}
         self.tcb.append(diccionario)
     
