@@ -154,7 +154,7 @@ class HiloDeNucleo():
                             self.otraCache[indiceBloque][5] = c.INVALIDO
                         # Se libera el candado de la otra cache
                         self.otraCacheLock.release()
-                    # Si no se obtiene
+                    # Si no se obtiene la otra cache
                     else:
                         # Se pasa 1 ciclo de reloj
                         self.pasarCicloReloj(1)
@@ -171,10 +171,62 @@ class HiloDeNucleo():
                     # Se libera el candado
                     self.busDatos.release()
                         
-                # Si no se obtiene
+                # Si no se obtiene el bus de datos
                 else:
+                    obtenerMiCache = False
                     # Se pasa 1 ciclo de reloj
                     self.pasarCicloReloj(1)
+                    
+                # Se libera el candado
+                self.miCacheLock.release()
+                
+            # Si no se obtiene mi cache
+            else:
+                # Se pasa 1 ciclo de reloj
+                self.pasarCicloReloj(1)
+
+    def load(self):
+        obtenerMiCache = False
+        while(obtenerMiCache == False):
+            # Se pide el candado
+            obtenerMiCache = self.miCacheLock.acquire(False)
+            # Si se obtiene
+            if (obtenerMiCache):
+                # Se obtiene la direccion en la memoria de datos en la cual se almacenará el valor
+                dirMemDatos = self.registros[self.instReg[2]] + self.instReg[3] 
+                # Se busca obtiene el numero de bloque
+                numBloque = int(dirMemDatos / 16)
+                # Se busca la palabra
+                numPalabra = int((dirMemDatos % 16) / 4)
+                # Se obtiene el indice del bloque en la cache
+                indiceBloque = int(numBloque % 4)
+                # Obtenemos el registro
+                reg = self.instReg[1]
+                # Se verifica si esta en la cache el bloque
+                if(self.estaEnCacheDatos()):
+                    self.registros[reg] = self.miCacheDatos[indiceBloque][numPalabra]
+                # Si no esta en la cache
+                else:
+                    # Se pide el bus de datos
+                    obtenerBusDatos = self.busDatos.acquire()
+                    # Si se obtiene
+                    if(obtenerBusDatos):
+                        # Se aumenta el ciclo de reloj
+                        self.pasarCicloReloj(1)
+                        
+                        # Subir el bloque
+                        
+                        
+                        # Pasar los ciclos de reloj
+                        self.pasarCicloReloj(5)
+                        
+                        # Se libera el candado
+                        self.busDatos.release()
+                            
+                    # Si no se obtiene
+                    else:
+                        # Se pasa 1 ciclo de reloj
+                        self.pasarCicloReloj(1)
                     
                 # Se libera el candado
                 self.miCacheLock.release()
