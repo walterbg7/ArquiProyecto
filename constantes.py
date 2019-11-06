@@ -22,3 +22,17 @@ ID_BLOQUE = 4
 #Estados de caché
 INVALIDO = -1
 VALIDO = 1
+
+# Intrucciones
+LW = 5
+ADDI = 19
+SW = 37
+DIV = 56
+ADD = 71
+MUL = 72
+SUB = 83
+BEQ = 99
+BNE = 100
+JAR = 103
+JALR = 111
+FIN = 999
