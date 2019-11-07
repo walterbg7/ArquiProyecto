@@ -4,6 +4,7 @@
 """
 import threading
 import hiloDeNucleo
+import constantes as c
 
 class HiloPrincipal():
     
@@ -30,6 +31,8 @@ class HiloPrincipal():
                              [0,0,0,0,-1,0],
                              [0,0,0,0,-1,0]]
         
+        # Variable para saber cuantos hilos han terminado su ejecución
+        self.hilillosFinalizados = [c.NINGUNO]
     
     def run(self):
         # Se llena la memoria de Datos
@@ -40,7 +43,7 @@ class HiloPrincipal():
         nucleo0 = hiloDeNucleo.HiloDeNucleo(0, self.tcb, self.memInst, self.memDatos, self.candadoBusInst, 
                                             self.candadoBusDatos, self.candadoTCB, self.barrera,
                                             self.candadoCacheNucleo0, self.candadoCacheNucleo1, 
-                                            self.cacheDatosN0, self.cacheDatosN1, self.candadoEscritura)
+                                            self.cacheDatosN0, self.cacheDatosN1, self.candadoEscritura, self.hilillosFinalizados)
         # Se crea el hilo
         nucleo0Thread = threading.Thread(target=nucleo0.run, args=())
         # Se corre el hilo
@@ -49,7 +52,7 @@ class HiloPrincipal():
         nucleo1 = hiloDeNucleo.HiloDeNucleo(1, self.tcb, self.memInst, self.memDatos, self.candadoBusInst, 
                                             self.candadoBusDatos, self.candadoTCB, self.barrera, 
                                             self.candadoCacheNucleo1, self.candadoCacheNucleo0,
-                                            self.cacheDatosN1, self.cacheDatosN0, self.candadoEscritura)
+                                            self.cacheDatosN1, self.cacheDatosN0, self.candadoEscritura, self.hilillosFinalizados)
         # Se crea el hilo
         nucleo1Thread = threading.Thread(target=nucleo1.run, args=())
         # Se corre el hilo
