@@ -142,22 +142,22 @@ class HiloDeNucleo():
                     self.pasarCicloReloj(1)
                     obtenerOtraCache = False
                     while(obtenerOtraCache == False):
-                    # Se pide la otra cache
-                    obtenerOtraCache = self.otraCacheLock.acquire()
-                    # Si se obtiene
-                    if(obtenerOtraCache):
-                        # Se aumenta el ciclo de reloj
-                        self.pasarCicloReloj(1)
-                        # Se verifica si el bloque esta en la otra cache
-                        if(numBloque == self.otraCache[indiceBloque][c.ID_BLOQUE]):
-                            # Se invalida la otra cache
-                            self.otraCache[indiceBloque][5] = c.INVALIDO
-                        # Se libera el candado de la otra cache
-                        self.otraCacheLock.release()
-                    # Si no se obtiene la otra cache
-                    else:
-                        # Se pasa 1 ciclo de reloj
-                        self.pasarCicloReloj(1)
+                        # Se pide la otra cache
+                        obtenerOtraCache = self.otraCacheLock.acquire()
+                        # Si se obtiene
+                        if(obtenerOtraCache):
+                            # Se aumenta el ciclo de reloj
+                            self.pasarCicloReloj(1)
+                            # Se verifica si el bloque esta en la otra cache
+                            if(numBloque == self.otraCache[indiceBloque][c.ID_BLOQUE]):
+                                # Se invalida la otra cache
+                                self.otraCache[indiceBloque][5] = c.INVALIDO
+                            # Se libera el candado de la otra cache
+                            self.otraCacheLock.release()
+                        # Si no se obtiene la otra cache
+                        else:
+                            # Se pasa 1 ciclo de reloj
+                            self.pasarCicloReloj(1)
                         
                     # GUARDAR EN LA MEMORIA DE DATOS - (la palabra, no el bloque)
                     #self.memDatos[]
@@ -166,7 +166,7 @@ class HiloDeNucleo():
                     #if(self.estaEnCacheDatos(numBloque)):
                     
                     # Pasar los ciclos de reloj
-                    self.pasarCicloReloj(5) # Revisar
+                    self.pasarCicloReloj(5)
                     
                     # Se libera el candado
                     self.busDatos.release()
@@ -202,7 +202,7 @@ class HiloDeNucleo():
                 indiceBloque = int(numBloque % 4)
                 # Obtenemos el registro
                 reg = self.instReg[1]
-                # Se verifica si esta en la cache el bloque
+                # Se verifica si no esta en la cache el bloque
                 if(self.estaEnCacheDatos()):
                     self.registros[reg] = self.miCacheDatos[indiceBloque][numPalabra]
                 # Si no esta en la cache
