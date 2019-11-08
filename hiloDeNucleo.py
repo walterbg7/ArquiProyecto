@@ -2,24 +2,25 @@
 """
     Clase para manejar la logica de cada hilo nucleo
 """
-from constantes import *
+#from constantes import *
+import constantes as c
+import time
 
 class HiloDeNucleo():
     
     # Constructor
     def __init__(self, id, tcb, memInst, memDatos, busI, busD, lockTCB, barrera, miCacheLock, otraCacheLock, miCache,
-                 otraCache):
+                 otraCache, candadoEscritura, hF):
         self.id = id
-        # Matriz que será la cache de instrucciones 
-        self.cacheInst =  [[0,0,0,0,-1], 
-                           [0,0,0,0,-1],
-                           [0,0,0,0,-1],
-                           [0,0,0,0,-1]]
+        # Matriz que será la cache de instrucciones
+        self.cacheInst =  [[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],-1], 
+                           [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],-1],
+                           [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],-1],
+                           [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],-1]]
         # Matriz que será la cache de datos
         self.miCacheDatos = miCache
         # Cache del otro Nucleo
         self.otraCache = otraCache
-        
         # Ciclo de reloj
         self.cicloReloj = 0
         # Lista para almacenar las instrucciones
@@ -46,121 +47,450 @@ class HiloDeNucleo():
         self.miCacheLock = miCacheLock
         # Candado para la otra cache
         self.otraCacheLock = otraCacheLock
-        
+        # Candado para escribir en consola
+        self.candadoEscritura = candadoEscritura
+        # Variable para saber cuantos hilos han terminado su ejecución
+        self.hilillosFinalizados = hF
         
         
     def run(self):
         #self.pruebaLocks()
         hayHilillo = True
         while(hayHilillo == True):
-            terminarHilillo = False
+            # Obtenemos el hilillo
             hayHilillo = self.obtenerHilillo()
-            while(terminarHilillo == False):
-                numBloque = self.progCount / 16
-                if(estaEnCache(numBloque) == False):
-                    self.cargarBloqueInst(numBloque)
-                    
-                self.instReg = self.cacheInst[(numBloque % 4)][(self.progCount % 16)/4]    
-                self.progCount+=4 # Observar si esto sirve para el branch
-                # Identificacion del  
-                if(self.instReg[0] == 999):
-                    terminarHilillo = True
-                elif(self.instReg[0] == 37):
-                    self.funcStore()
+            if(hayHilillo):
+                # Ejecutamos la intruccion
+                self.ejecutarInst()
                 
-                numBloque -= 24
-            self.imprimirTCB()
+        self.candadoEscritura.acquire()
+        if(self.hilillosFinalizados[0] == c.NINGUNO):
+            self.hilillosFinalizados[0] = c.UNO
+            self.candadoEscritura.release()
+            fin = False
+            while(fin == False):
+                self.candadoEscritura.acquire()
+                if(self.hilillosFinalizados[0] == c.DOS):
+                    fin = True
+                self.candadoEscritura.release()
+                if(fin == False):
+                    self.pasarCicloReloj(1)
+        elif(self.hilillosFinalizados[0] == c.UNO):
+            self.hilillosFinalizados[0] = c.DOS
+            self.candadoEscritura.release()
+            
+    def ejecutarInst(self):
+        terminarHilillo = False
+        while(terminarHilillo == False):
+            # Se obtiene el numero de bloque
+            numBloque = int(self.progCount / 16)
+            # Se pregunta si el bloque está en la cache de instrucciones
+            if(self.estaEnCacheInst(numBloque) == False):
+                # Si no esta se carga el bloque
+                self.cargarBloqueInst(numBloque)
+            # Se obtine el indice del bloque en cache
+            indiceBloque = int(numBloque % 4)
+            # Se obtiene la palabra del bloque
+            indicePalabra = int((self.progCount % 16)/4)
+            # Se carga la instruccion al intruction register
+            self.instReg = self.cacheInst[indiceBloque][indicePalabra]
+            self.imprimir("IR: "+str(self.instReg))
+            # Se aumenta el program counter
+            self.progCount += 4 # ------ Observar si esto sirve para el branch -----
+            # Obtenemos la instruccion
+            intruccion = self.instReg[0]
+            # Identificacion de la instruccion
+            if(intruccion == 999):
+                self.terminarHilillo()
+                terminarHilillo = True
+            elif(intruccion == 5):
+                # Es un Load
+                self.imprimir("Nuleo: "+str(self.id)+", Inst Load")
+                self.load()
+                self.imprimir("Nuleo: "+str(self.id)+", Salio del Load")
+            elif(intruccion == 19):
+                # Es un Addi
+                self.imprimir("Nuleo: "+str(self.id)+", Inst Addi")
+                self.addi()
+                self.imprimir("Nuleo: "+str(self.id)+", Salio del Addi")
+            elif(intruccion == 37):
+                # Es un Store
+                self.imprimir("Nuleo: "+str(self.id)+", Inst Store")
+                self.store()
+                self.imprimir("Nuleo: "+str(self.id)+", Salio del store")
+            elif(intruccion == 56):
+                # Es un Load
+                self.imprimir("Nuleo: "+str(self.id)+", Inst Div")
+                self.div()
+                self.imprimir("Nuleo: "+str(self.id)+", Salio del div")
+            elif(intruccion == 71):
+                # Es un Load
+                self.imprimir("Nuleo: "+str(self.id)+", Inst Add")
+                self.add()
+                self.imprimir("Nuleo: "+str(self.id)+", Salio del Add")
+            elif(intruccion == 72):
+                # Es un Load
+                self.imprimir("Nuleo: "+str(self.id)+", Inst Mul")
+                self.mul()
+                self.imprimir("Nuleo: "+str(self.id)+", Salio del mul")
+            elif(intruccion == 83):
+                # Es un Sub
+                self.imprimir("Nuleo: "+str(self.id)+", Inst Sub")
+                self.sub()
+                self.imprimir("Nuleo: "+str(self.id)+", Salio del sub")
+            elif(intruccion == 99):
+                # Es un Beq
+                self.imprimir("Nuleo: "+str(self.id)+", Inst Beq")
+                self.beq()
+                self.imprimir("Nuleo: "+str(self.id)+", Salio del beq")
+            elif(intruccion == 100):
+                # Es un Bne
+                self.imprimir("Nuleo: "+str(self.id)+", Inst Bne")
+                self.bne()
+                self.imprimir("Nuleo: "+str(self.id)+", Salio del Bne")
+            elif(intruccion == 103):
+                # Es un Jar
+                self.imprimir("Nuleo: "+str(self.id)+", Inst Jar")
+                self.jalr()
+                self.imprimir("Nuleo: "+str(self.id)+", Salio del jar")
+            elif(intruccion == 111):
+                # Es un Jalr
+                self.imprimir("Nuleo: "+str(self.id)+", Inst Jalr")
+                self.jal()
+                self.imprimir("Nuleo: "+str(self.id)+", Salio del jalr")
+            self.pasarCicloReloj(1)
+    
+    # Metodo que realiza el Addi
+    def addi(self):
+        suma = self.registros[self.instReg[2]] + self.instReg[3]
+        self.registros[self.instReg[1]] = suma
+        
+    
+    # Metodo que realiza el Add
+    def add(self):
+        suma = self.registros[self.instReg[2]] + self.registros[self.instReg[3]]
+        self.registros[self.instReg[1]] = suma
+        
+    # Metodo que se encarga de hacer el sub
+    def sub(self):
+        resta = self.registros[self.instReg[2]] - self.registros[self.instReg[3]]
+        self.registros[self.instReg[1]] = resta
+        
+     # Metodo que se encarga de hacer el mul
+    def mul(self):
+        multiplicacion = self.registros[self.instReg[2]] * self.registros[self.instReg[3]]
+        self.registros[self.instReg[1]] = multiplicacion
+        
+     # Metodo que se encarga de hacer el div
+    def div(self):
+        division = (self.registros[self.instReg[2]] / self.registros[self.instReg[3]])
+        self.registros[self.instReg[1]] = division
+        
+    # Metodo que se encarga de hacer el branch equal
+    def beq(self):
+        if(self.registros[self.instReg[1]] == self.registros[self.instReg[2]]):
+            self.progCount += (self.instReg[3] * 4)
+                
+            
+    # Metodo que se encarga de hacer el branch not equal
+    def bne(self):
+        if(self.registros[self.instReg[1]] != self.registros[self.instReg[2]]):
+            self.progCount += (self.instReg[3] * 4)
+            
+    # Metodo que hace el jal
+    def jal(self):
+        self.registros[self.instReg[1]] = self.progCount
+        self.progCount += self.instReg[3]
+        self.imprimir("----------------------- Tienbe 16: "+str(self.instReg[3]))
+        self.imprimir("asd:"+str(self.progCount))
+           
+    # Metodo que hace el jalr
+    def jalr(self):
+        self.registros[self.instReg[1]] = self.progCount
+        self.progCount = self.registros[self.instReg[2]] + self.instReg[3]
             
     # Metodo que se encarga de realizar el Store Word 
-    def funcStore(self): 
-        self.miCacheLock.acquire()
-        
+    def store(self):
+        obtenerMiCache = False
+        # Se obtiene la direccion en la memoria de datos en la cual se almacenará el valor
         dirMemDatos = self.registros[self.instReg[1]] + self.instReg[3] 
-        numBloque = dirMemDatos / 16
-        self.busDatos.acquire()
-        
-        self.otraCacheLock.acquire()
-        
-        # Se invalida la otra cache o no
-        if(numBloque == self.otraCache[(numBloque % 4)][ID_BLOQUE]):
-            self.otraCache[(numBloque % 4)][5] = INVALIDO
-        
-        
-        self.otraCacheLock.release()
-        
-        # GUARDAR EN LA MEMORIA DE DATOS - (la palabra, no el bloque)
-        # PASAR LOS CICLOS DE RELOJ
-        
-        self.busDatos.release()
-        
-        # SI EL BLOQUE ESTA EN MI CACHE, SE ESCRIBE ALLÍ, SINO NO
-            
-        self.miCacheLock.release()
+        # Se busca obtiene el numero de bloque
+        numBloque = int(dirMemDatos / 16)
+        # Se busca la palabra
+        indicePalabra = int((dirMemDatos % 16) / 4)
+        # Se obtiene el indice del bloque en la cache
+        indiceBloque = int(numBloque % 4)
+        # Direccion final en memoria de datos
+        dirFinal = int(dirMemDatos/4)
+        while(obtenerMiCache == False):
+            # Se pide el candado
+            obtenerMiCache = self.miCacheLock.acquire(False)
+            # Si se obtiene
+            if (obtenerMiCache):
+                self.imprimir("Nuleo: "+str(self.id)+", Store tengo mi cache")
+                # Se pide el bus de datos
+                obtenerBusDatos = self.busDatos.acquire(False)
+                # Si se obtiene
+                if(obtenerBusDatos):
+                    self.imprimir("Nuleo: "+str(self.id)+", Store tengo el bus")
+                    # Se aumenta el ciclo de reloj
+                    self.pasarCicloReloj(1, True)
+                    obtenerOtraCache = False
+                    while(obtenerOtraCache == False):
+                        # Se pide la otra cache
+                        obtenerOtraCache = self.otraCacheLock.acquire(False)
+                        # Si se obtiene
+                        if(obtenerOtraCache):
+                            self.imprimir("Nuleo: "+str(self.id)+", Store tengo la otra cache")
+                            # Se aumenta el ciclo de reloj
+                            self.pasarCicloReloj(1, True)
+                            # Se verifica si el bloque esta en la otra cache
+                            if(numBloque == self.otraCache[indiceBloque][c.ID_BLOQUE]):
+                                # Se invalida la otra cache
+                                self.otraCache[indiceBloque][c.ESTADO_BLOQUE] = c.INVALIDO
+                                # Se pasa 1 ciclo de reloj 
+                                self.pasarCicloReloj(1, True)
+                            # Se libera el candado de la otra cache
+                            self.otraCacheLock.release()
+                        # Si no se obtiene la otra cache
+                        else:
+                            self.imprimir("Nuleo: "+str(self.id)+", Store no tengo la otra cache")
+                            # Se pasa 1 ciclo de reloj
+                            self.pasarCicloReloj(1)
+                            
+                        
+                    # GUARDAR EN LA MEMORIA DE DATOS - (la palabra, no el bloque)
+                    self.memDatos[dirFinal] = self.registros[self.instReg[2]]
+                    
+                    # SI EL BLOQUE ESTA EN MI CACHE, SE ESCRIBE ALLÍ, SINO NO
+                    if(self.estaEnCacheDatos(numBloque)):
+                        self.miCacheDatos[indiceBloque][indicePalabra] = self.registros[self.instReg[2]]
+                    
+                    # Pasar los ciclos de reloj
+                    self.pasarCicloReloj(5, True)
+                    
+                    # Se libera el candado
+                    self.busDatos.release()
+                        
+                # Si no se obtiene el bus de datos
+                else:
+                    self.imprimir("Nucleo: "+str(self.id)+", Store no tengo el bus")
+                    obtenerMiCache = False
+                    # Se pasa 1 ciclo de reloj
+                    self.pasarCicloReloj(1, True)
+                    
+                # Se libera el candado
+                self.miCacheLock.release()
+                
+                self.pasarCicloReloj(1)
+                
+            # Si no se obtiene mi cache
+            else:
+                self.imprimir("Nuleo: "+str(self.id)+", Store no tengo mi cache")
+                # Se pasa 1 ciclo de reloj
+                self.pasarCicloReloj(1, True)
+
+    def load(self):
+        obtenerMiCache = False
+        # Se obtiene la direccion en la memoria de datos en la cual se almacenará el valor
+        dirMemDatos = self.registros[self.instReg[2]] + self.instReg[3] 
+        # Se busca obtiene el numero de bloque
+        numBloque = int(dirMemDatos / 16)
+        # Se busca la palabra
+        indicePalabra = int((dirMemDatos % 16) / 4)
+        # Se obtiene el indice del bloque en la cache
+        indiceBloque = int(numBloque % 4)
+        # Obtenemos el registro
+        reg = self.instReg[1]
+        while(obtenerMiCache == False):
+            # Se pide el candado
+            obtenerMiCache = self.miCacheLock.acquire(False)
+            # Si se obtiene
+            if (obtenerMiCache):
+                self.imprimir("Nuleo: "+str(self.id)+", Load tengo mi cache")
+                # Se verifica si no esta en la cache el bloque
+                if(self.estaEnCacheDatos(numBloque)):
+                    self.imprimir("Load Esta el bloque")
+                    # Se pasa la palabra de la cache de datos al registro correspondiente
+                    self.registros[reg] = self.miCacheDatos[indiceBloque][indicePalabra]
+                # Si no esta en la cache
+                else:
+                    self.imprimir("Nuleo: "+str(self.id)+", Load no esta el bloque")
+                    # Se pide el bus de datos
+                    obtenerBusDatos = self.busDatos.acquire(False)
+                    # Si se obtiene
+                    if(obtenerBusDatos):
+                        self.imprimir("Nuleo: "+str(self.id)+", Load tengo el bus")
+                        # Se aumenta el ciclo de reloj
+                        self.pasarCicloReloj(1)
+                        
+                        # Subir el bloque
+                        self.cargarBloqueDatos(numBloque, indiceBloque)
+                        
+                        # Se valida el bloque en la cache de datos
+                        self.miCacheDatos[indiceBloque][c.ESTADO_BLOQUE] = c.VALIDO
+                        
+                         # Se pasa la palabra de la cache de datos al registro correspondiente
+                        self.registros[reg] = self.miCacheDatos[indiceBloque][indicePalabra]
+                        
+                        # Pasar los ciclos de reloj
+                        self.pasarCicloReloj(20)
+                        
+                        # Se libera el candado
+                        self.busDatos.release()
+                            
+                    # Si no se obtiene
+                    else:
+                        self.imprimir("Nuleo: "+str(self.id)+", Load no tengo el bus")
+                        # Se pasa 1 ciclo de reloj
+                        self.pasarCicloReloj(1)
+                    
+                # Se libera el candado
+                self.miCacheLock.release()
+                
+                #time.sleep(1)
+                
+            # Si no se obtiene
+            else:
+                self.imprimir("Nuleo: "+str(self.id)+", Load no tengo mi cache")
+                # Se pasa 1 ciclo de reloj
+                self.pasarCicloReloj(1)
+                
+                
+    #Metodo para cargar bloque de memoria de datos a cache de datos
+    def cargarBloqueDatos(self, numBloque, indiceBloque):
+        bloqueEnMemDatos = numBloque*4
+        for i in range(0,4):
+            self.miCacheDatos[indiceBloque][i] = self.memDatos[bloqueEnMemDatos+i]
             
         
     # Metodo para cargar bloque de memoria de instrucciones a cache de instrucciones
     def cargarBloqueInst(self, numBloque):
-        self.busInst.acquire()
-        bloqueEnMemInst = numBloque - 24
-        for i in range(0, 4):
-            self.cacheInst[numBloque % 4][i][0] = self.memInst[bloqueEnMemInst]
-            self.cacheInst[numBloque % 4][i][1] = self.memInst[bloqueEnMemInst+1]
-            self.cacheInst[numBloque % 4][i][2] = self.memInst[bloqueEnMemInst+2]
-            self.cacheInst[numBloque % 4][i][3] = self.memInst[bloqueEnMemInst+3]
-            bloqueEnMemInst += 4
-        self.cacheInst[(numBloque % 4)][ID_BLOQUE] = numBloque
-        # Pasar los ciclos de reloj
-        for i in range(0,10):
-            self.barrera.wait()
-            self.cicloReloj+=1
-        self.busInst.release()
-        
-        
+        obtenerBus = False
+        # Se obtiene el indice del bloque en la cache
+        indiceBloque = int(numBloque % 4)
+        while(obtenerBus == False):
+            # Se pide el bus de Instrucciones
+            obtenerBus = self.busInst.acquire(False)
+            # Si se obtiene
+            if(obtenerBus):
+                # Se obtiene la direcccion del bloque en la memoria de instrucciones
+                bloqueEnMemInst = (numBloque - 24)*16
+                # Se cargan las 4 palabras en la cache
+                for i in range(0, 4):
+                    # palabra 0
+                    self.cacheInst[indiceBloque][i][0] = self.memInst[bloqueEnMemInst]
+                    # palabra 1
+                    self.cacheInst[indiceBloque][i][1] = self.memInst[bloqueEnMemInst+1]
+                    # palabra 2
+                    self.cacheInst[indiceBloque][i][2] = self.memInst[bloqueEnMemInst+2]
+                    # palabra 3
+                    self.cacheInst[indiceBloque][i][3] = self.memInst[bloqueEnMemInst+3]
+                    bloqueEnMemInst += 4
+                # Se le agrega el numero de bloque que se cargo a la cache
+                self.cacheInst[indiceBloque][c.ID_BLOQUE] = numBloque
+                # Pasar los ciclos de reloj
+                self.pasarCicloReloj(10)
+                self.busInst.release()
+            # Si no se obtiene
+            else:
+                self.pasarCicloReloj(1)
+        self.imprimirCI()
         
     # Metodo para saber si un bloque esta en caché de Inst
-    def estaEnCache(self, numBloque):
-        if(numBloque == self.cacheInst[(numBloque % 4)][ID_BLOQUE]):
+    def estaEnCacheInst(self, numBloque):
+        # Se pregunta si el bloque está en la cache
+        indiceBloque = int(numBloque % 4)
+        if(numBloque == self.cacheInst[indiceBloque][c.ID_BLOQUE]):
             return True
         return False
-            
-
+    
+    # Metodo para saber si un bloque esta en caché de Datos
+    def estaEnCacheDatos(self, numBloque):
+        # Se pregunta si el bloque está en la cache
+        indiceBloque = int(numBloque % 4)
+        if(numBloque == self.miCacheDatos[indiceBloque][c.ID_BLOQUE] and self.miCacheDatos[indiceBloque][c.ESTADO_BLOQUE] == c.VALIDO):
+            return True
+        return False
     
     # Metodo para obtener un hilillo
     def obtenerHilillo(self):
+        # Se bloquea la TCB
         self.lockTCB.acquire()
         hayHilillo = False
+        # Se busca sobre la lista de hilillos
         for hilillo in self.tcb:
-            if(hilillo['estado'] == NO_EJECUTADO):
+            # Si existe un hilillo que no ha sido ejecitado
+            if(hilillo['estado'] == c.NO_EJECUTADO):
                 hayHilillo = True
-                print("Hilo disponible" )
-                print(hilillo['id_hilillo'])
+                self.imprimir("************************************ Hilillo disponible id: "+str(hilillo['id_hilillo']))
+                # Se cargan los registros de la TCB a los registros del nucleo
                 self.registros = hilillo['Registros']
-                hilillo['estado'] = EJECUCION
+                # Se pone el estado en Ejecucion
+                hilillo['estado'] = c.EJECUCION
+                # Se le indica el id del nucleo que ejecutará el hilillo
                 hilillo['id_nucleo'] = self.id
+                # Se le asigna valor al Program Counter
                 self.progCount = hilillo['PC']
                 break
+        # Se libera el candado
         self.lockTCB.release()
+        # Se retorna true si hay algun hilillo que ejecutar, en caso contrario False
         return hayHilillo
-                
-                
-                
-    # Eliminar
-    def pruebaLocks(self):
-        # Prueba de locks
-        print("Nucleo ",self.id," listo \n")
-        if (self.id == 0):
-            self.busDatos.acquire()
-            self.memDatos[0] = 7
-            print("\n",self.memDatos,"\n")
-            self.busDatos.release()
-        else:
-            self.busDatos.acquire()
-            print("\n",self.memDatos,"\n")
-            self.busDatos.release()
+    
+    def terminarHilillo(self):
+        # Se bloquea la TCB
+        self.lockTCB.acquire()
+        for hilillo in self.tcb:
+            if(hilillo['estado'] == c.EJECUCION and hilillo['id_nucleo'] == self.id):
+                self.imprimir("++++++++++++++++++++++ Hilillo terminado id: "+str(hilillo['id_hilillo']))
+                # Se cargan los registros del nucleo a la TCB
+                hilillo['Registros'] = self.registros
+                # Se pone el estado en Ejecucion
+                hilillo['estado'] = c.TERMINADO
+                break
+        # Se bloquea la TCB
+        self.lockTCB.release()
+            
+    # Metodo para pasar ciclos de reloj
+    def pasarCicloReloj(self, n, b = False):
+        # time.sleep(2)
+        # Se hace un for por la cantidad de ciclos de reloj que se quieren pasar
+        for i in range(0, n):
+            #if(b == True):
+            #    self.imprimir("Antes de la barrera: "+str(self.cicloReloj))
+            # Se espera en la barrera al otro nucleo 
+            self.barrera.wait()
+            # Se aumenta el ciclo de reloj
+            self.cicloReloj += 1
+            #if(b == True):
+            #    self.imprimir("Pase la barrera: "+str(self.cicloReloj))
+            
+    # Metodo para imprimir en consola
+    def imprimir(self, msj):
+        # Se obtiene candado
+        self.candadoEscritura.acquire()
+        # Se imprime el mensaje
+        print("Nuleo: ", self.id, ", ", msj)
+        # Se libera el candado
+        self.candadoEscritura.release()
         
     # Metodo para imprimir la TCB
     def imprimirTCB(self):
+        self.imprimir("***TCB***")
         for item in self.tcb:
-            print(item)
+            self.imprimir(item)
+    
+    # Metodo para imprimir la Cache de Instruciones
+    def imprimirCI(self):
+        self.imprimir("Cache de Instrcciones")
+        for item in self.cacheInst:
+            self.imprimir(item)
+    
+    # Metodo para imprimir la Cache de Datos
+    def imprimirCD(self):
+        self.imprimir("Cache de Datos")
+        for item in self.miCacheDatos:
+            self.imprimir(item)
         
             
