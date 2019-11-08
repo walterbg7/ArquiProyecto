@@ -69,7 +69,7 @@ class HiloPrincipal():
     # Se crea una lista de diccionarios, donde cada indice de la lista es 
     def llenarTCB(self, pc, nombre_archivo):
         registros = []
-        for i in range(0,31):
+        for i in range(0,32):
             registros.append(0)
         diccionario = {'PC':pc,'Registros':registros, 'id_nucleo':-1, 
         'id_hilillo':nombre_archivo, 'estado':0}
