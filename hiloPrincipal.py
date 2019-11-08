@@ -32,7 +32,7 @@ class HiloPrincipal():
                              [0,0,0,0,-1,0]]
         
         # Variable para saber cuantos hilos han terminado su ejecución
-        self.hilillosFinalizados = [c.NINGUNO]
+        self.hilillosFinalizados =  [c.NINGUNO]
     
     def run(self):
         # Se llena la memoria de Datos
@@ -60,6 +60,11 @@ class HiloPrincipal():
         self.candadoEscritura.acquire()
         print("Si bueno, quien tiene hambre \n")
         self.candadoEscritura.release()
+        
+        while(self.hilillosFinalizados[0] != c.TERMINADO):
+            pass
+        self.imprimirTCB()
+        print("Mem Datos: \n", self.memDatos)
         
     def llenarMenDatos(self):
         for i in range(0,96):
@@ -95,6 +100,25 @@ class HiloPrincipal():
                             ponerEnTCB = True
                     except ValueError:
                         pass
+            # Probando para que funcione el ultimo hilillo
+            #for i in range(0, 12):
+             #   self.memInst.append(0)
             f.close()
         print("Mem Instucciones: \n", self.memInst)
         print("TCB: \n", self.tcb)
+        
+        
+    def imprimirTCB(self):
+        print("----  Resultados  ----")
+        print("** TCB **\n\n")
+        for item in self.tcb:
+            print("EL HILILLO ", item['id_hilillo'])
+            print(item)
+            print("\n\n\n")
+                      
+                      
+                      
+                      
+                      
+                      
+                      

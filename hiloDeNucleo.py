@@ -150,14 +150,14 @@ class HiloDeNucleo():
                 self.imprimir("Nuleo: "+str(self.id)+", Salio del Bne")
             elif(intruccion == 103):
                 # Es un Jar
-                self.imprimir("Nuleo: "+str(self.id)+", Inst Jar")
+                self.imprimir("Nuleo: "+str(self.id)+", Inst Jalr")
                 self.jalr()
-                self.imprimir("Nuleo: "+str(self.id)+", Salio del jar")
+                self.imprimir("Nuleo: "+str(self.id)+", Salio del jalr")
             elif(intruccion == 111):
                 # Es un Jalr
-                self.imprimir("Nuleo: "+str(self.id)+", Inst Jalr")
+                self.imprimir("Nuleo: "+str(self.id)+", Inst Jal")
                 self.jal()
-                self.imprimir("Nuleo: "+str(self.id)+", Salio del jalr")
+                self.imprimir("Nuleo: "+str(self.id)+", Salio del jal")
             self.pasarCicloReloj(1)
     
     # Metodo que realiza el Addi
@@ -378,14 +378,24 @@ class HiloDeNucleo():
                 bloqueEnMemInst = (numBloque - 24)*16
                 # Se cargan las 4 palabras en la cache
                 for i in range(0, 4):
-                    # palabra 0
-                    self.cacheInst[indiceBloque][i][0] = self.memInst[bloqueEnMemInst]
-                    # palabra 1
-                    self.cacheInst[indiceBloque][i][1] = self.memInst[bloqueEnMemInst+1]
-                    # palabra 2
-                    self.cacheInst[indiceBloque][i][2] = self.memInst[bloqueEnMemInst+2]
-                    # palabra 3
-                    self.cacheInst[indiceBloque][i][3] = self.memInst[bloqueEnMemInst+3]
+                    try:
+                        # palabra 0
+                        self.cacheInst[indiceBloque][i][0] = self.memInst[bloqueEnMemInst]
+                        # palabra 1
+                        self.cacheInst[indiceBloque][i][1] = self.memInst[bloqueEnMemInst+1]
+                        # palabra 2
+                        self.cacheInst[indiceBloque][i][2] = self.memInst[bloqueEnMemInst+2]
+                        # palabra 3
+                        self.cacheInst[indiceBloque][i][3] = self.memInst[bloqueEnMemInst+3]
+                    except IndexError:
+                         # palabra 0
+                        self.cacheInst[indiceBloque][i][0] = 0
+                        # palabra 1
+                        self.cacheInst[indiceBloque][i][1] = 0
+                        # palabra 2
+                        self.cacheInst[indiceBloque][i][2] = 0
+                        # palabra 3
+                        self.cacheInst[indiceBloque][i][3] = 0
                     bloqueEnMemInst += 4
                 # Se le agrega el numero de bloque que se cargo a la cache
                 self.cacheInst[indiceBloque][c.ID_BLOQUE] = numBloque
@@ -493,4 +503,5 @@ class HiloDeNucleo():
         for item in self.miCacheDatos:
             self.imprimir(item)
         
+
             
