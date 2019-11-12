@@ -6,4 +6,3 @@ import hiloPrincipal
 
 hiloP = hiloPrincipal.HiloPrincipal()
 hiloP.run()
-#hiloP.imprimirTCB()

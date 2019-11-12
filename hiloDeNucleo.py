@@ -2,17 +2,16 @@
 """
     Clase para manejar la logica de cada hilo nucleo
 """
-#from constantes import *
 import constantes as c
-import time
 
 class HiloDeNucleo():
     
     # Constructor
     def __init__(self, id, tcb, memInst, memDatos, busI, busD, lockTCB, barrera, miCacheLock, otraCacheLock, miCache,
                  otraCache, candadoEscritura, hF):
+        # Identificacion del nucleo 
         self.id = id
-        # Matriz que será la cache de instrucciones
+        # Matriz que será la cache de instrucciones 
         self.cacheInst =  [[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],-1], 
                            [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],-1],
                            [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],-1],
@@ -39,28 +38,31 @@ class HiloDeNucleo():
         self.registros = []
         # TCB
         self.tcb = tcb
+        
+        # ---- Candados ----
+        
         # Candado de TCB
         self.lockTCB = lockTCB
-        # Barrera de ciclo reloj
-        self.barrera = barrera
         # Candado para mi cache
         self.miCacheLock = miCacheLock
         # Candado para la otra cache
         self.otraCacheLock = otraCacheLock
         # Candado para escribir en consola
         self.candadoEscritura = candadoEscritura
+        # Barrera de ciclo reloj
+        self.barrera = barrera
         # Variable para saber cuantos hilos han terminado su ejecución
         self.hilillosFinalizados = hF
         
         
     def run(self):
-        #self.pruebaLocks()
-        hayHilillo = True
+        # Variable para saber si hay hilillos por ejecutar en la TCB
+        hayHilillo = True 
         while(hayHilillo == True):
             # Obtenemos el hilillo
             hayHilillo = self.obtenerHilillo()
             if(hayHilillo):
-                # Ejecutamos la intruccion
+                # Ejecutamos la instruccion
                 self.ejecutarInst()
                 
         self.candadoEscritura.acquire()
@@ -78,6 +80,8 @@ class HiloDeNucleo():
         elif(self.hilillosFinalizados[0] == c.UNO):
             self.hilillosFinalizados[0] = c.DOS
             self.candadoEscritura.release()
+            self.imprimirTCB()
+            print("Mem Datos: \n", self.memDatos)
             
     def ejecutarInst(self):
         terminarHilillo = False
@@ -96,68 +100,68 @@ class HiloDeNucleo():
             self.instReg = self.cacheInst[indiceBloque][indicePalabra]
             self.imprimir("IR: "+str(self.instReg))
             # Se aumenta el program counter
-            self.progCount += 4 # ------ Observar si esto sirve para el branch -----
+            self.progCount += 4 
             # Obtenemos la instruccion
-            intruccion = self.instReg[0]
+            instruccion = self.instReg[0]
             # Identificacion de la instruccion
-            if(intruccion == 999):
+            if(instruccion == 999):
                 self.terminarHilillo()
                 terminarHilillo = True
-            elif(intruccion == 5):
+            elif(instruccion == 5):
                 # Es un Load
-                self.imprimir("Nuleo: "+str(self.id)+", Inst Load")
+                self.imprimir("Inst Load")
                 self.load()
-                self.imprimir("Nuleo: "+str(self.id)+", Salio del Load")
-            elif(intruccion == 19):
+                self.imprimir("Salio del Load")
+            elif(instruccion == 19):
                 # Es un Addi
-                self.imprimir("Nuleo: "+str(self.id)+", Inst Addi")
+                self.imprimir("Inst Addi")
                 self.addi()
-                self.imprimir("Nuleo: "+str(self.id)+", Salio del Addi")
-            elif(intruccion == 37):
+                self.imprimir("Salio del Addi")
+            elif(instruccion == 37):
                 # Es un Store
-                self.imprimir("Nuleo: "+str(self.id)+", Inst Store")
+                self.imprimir("Inst Store")
                 self.store()
-                self.imprimir("Nuleo: "+str(self.id)+", Salio del store")
-            elif(intruccion == 56):
+                self.imprimir("Salio del store")
+            elif(instruccion == 56):
                 # Es un Load
-                self.imprimir("Nuleo: "+str(self.id)+", Inst Div")
+                self.imprimir("Inst Div")
                 self.div()
-                self.imprimir("Nuleo: "+str(self.id)+", Salio del div")
-            elif(intruccion == 71):
+                self.imprimir("Salio del div")
+            elif(instruccion == 71):
                 # Es un Load
-                self.imprimir("Nuleo: "+str(self.id)+", Inst Add")
+                self.imprimir("Inst Add")
                 self.add()
-                self.imprimir("Nuleo: "+str(self.id)+", Salio del Add")
-            elif(intruccion == 72):
+                self.imprimir("Salio del Add")
+            elif(instruccion == 72):
                 # Es un Load
-                self.imprimir("Nuleo: "+str(self.id)+", Inst Mul")
+                self.imprimir("Inst Mul")
                 self.mul()
-                self.imprimir("Nuleo: "+str(self.id)+", Salio del mul")
-            elif(intruccion == 83):
+                self.imprimir("Salio del mul")
+            elif(instruccion == 83):
                 # Es un Sub
-                self.imprimir("Nuleo: "+str(self.id)+", Inst Sub")
+                self.imprimir("Inst Sub")
                 self.sub()
-                self.imprimir("Nuleo: "+str(self.id)+", Salio del sub")
-            elif(intruccion == 99):
+                self.imprimir("Salio del sub")
+            elif(instruccion == 99):
                 # Es un Beq
-                self.imprimir("Nuleo: "+str(self.id)+", Inst Beq")
+                self.imprimir("Inst Beq")
                 self.beq()
-                self.imprimir("Nuleo: "+str(self.id)+", Salio del beq")
-            elif(intruccion == 100):
+                self.imprimir("Salio del beq")
+            elif(instruccion == 100):
                 # Es un Bne
-                self.imprimir("Nuleo: "+str(self.id)+", Inst Bne")
+                self.imprimir("Inst Bne")
                 self.bne()
-                self.imprimir("Nuleo: "+str(self.id)+", Salio del Bne")
-            elif(intruccion == 103):
+                self.imprimir("Salio del Bne")
+            elif(instruccion == 103):
                 # Es un Jar
-                self.imprimir("Nuleo: "+str(self.id)+", Inst Jalr")
+                self.imprimir("Inst Jalr")
                 self.jalr()
-                self.imprimir("Nuleo: "+str(self.id)+", Salio del jalr")
-            elif(intruccion == 111):
+                self.imprimir("Salio del jalr")
+            elif(instruccion == 111):
                 # Es un Jalr
-                self.imprimir("Nuleo: "+str(self.id)+", Inst Jal")
+                self.imprimir("Inst Jal")
                 self.jal()
-                self.imprimir("Nuleo: "+str(self.id)+", Salio del jal")
+                self.imprimir("Salio del jal")
             self.pasarCicloReloj(1)
     
     # Metodo que realiza el Addi
@@ -179,12 +183,12 @@ class HiloDeNucleo():
      # Metodo que se encarga de hacer el mul
     def mul(self):
         multiplicacion = self.registros[self.instReg[2]] * self.registros[self.instReg[3]]
-        self.registros[self.instReg[1]] = multiplicacion
+        self.registros[self.instReg[1]] = int(multiplicacion)
         
      # Metodo que se encarga de hacer el div
     def div(self):
         division = (self.registros[self.instReg[2]] / self.registros[self.instReg[3]])
-        self.registros[self.instReg[1]] = division
+        self.registros[self.instReg[1]] = int(division)
         
     # Metodo que se encarga de hacer el branch equal
     def beq(self):
@@ -201,8 +205,6 @@ class HiloDeNucleo():
     def jal(self):
         self.registros[self.instReg[1]] = self.progCount
         self.progCount += self.instReg[3]
-        self.imprimir("----------------------- Tienbe 16: "+str(self.instReg[3]))
-        self.imprimir("asd:"+str(self.progCount))
            
     # Metodo que hace el jalr
     def jalr(self):
@@ -227,12 +229,10 @@ class HiloDeNucleo():
             obtenerMiCache = self.miCacheLock.acquire(False)
             # Si se obtiene
             if (obtenerMiCache):
-                self.imprimir("Nuleo: "+str(self.id)+", Store tengo mi cache")
                 # Se pide el bus de datos
                 obtenerBusDatos = self.busDatos.acquire(False)
                 # Si se obtiene
                 if(obtenerBusDatos):
-                    self.imprimir("Nuleo: "+str(self.id)+", Store tengo el bus")
                     # Se aumenta el ciclo de reloj
                     self.pasarCicloReloj(1, True)
                     obtenerOtraCache = False
@@ -241,7 +241,6 @@ class HiloDeNucleo():
                         obtenerOtraCache = self.otraCacheLock.acquire(False)
                         # Si se obtiene
                         if(obtenerOtraCache):
-                            self.imprimir("Nuleo: "+str(self.id)+", Store tengo la otra cache")
                             # Se aumenta el ciclo de reloj
                             self.pasarCicloReloj(1, True)
                             # Se verifica si el bloque esta en la otra cache
@@ -254,7 +253,6 @@ class HiloDeNucleo():
                             self.otraCacheLock.release()
                         # Si no se obtiene la otra cache
                         else:
-                            self.imprimir("Nuleo: "+str(self.id)+", Store no tengo la otra cache")
                             # Se pasa 1 ciclo de reloj
                             self.pasarCicloReloj(1)
                             
@@ -274,7 +272,6 @@ class HiloDeNucleo():
                         
                 # Si no se obtiene el bus de datos
                 else:
-                    self.imprimir("Nucleo: "+str(self.id)+", Store no tengo el bus")
                     obtenerMiCache = False
                     # Se pasa 1 ciclo de reloj
                     self.pasarCicloReloj(1, True)
@@ -286,7 +283,6 @@ class HiloDeNucleo():
                 
             # Si no se obtiene mi cache
             else:
-                self.imprimir("Nuleo: "+str(self.id)+", Store no tengo mi cache")
                 # Se pasa 1 ciclo de reloj
                 self.pasarCicloReloj(1, True)
 
@@ -296,7 +292,7 @@ class HiloDeNucleo():
         dirMemDatos = self.registros[self.instReg[2]] + self.instReg[3] 
         # Se busca obtiene el numero de bloque
         numBloque = int(dirMemDatos / 16)
-        # Se busca la palabra
+        # Se busca la palabra en la cache
         indicePalabra = int((dirMemDatos % 16) / 4)
         # Se obtiene el indice del bloque en la cache
         indiceBloque = int(numBloque % 4)
@@ -307,20 +303,16 @@ class HiloDeNucleo():
             obtenerMiCache = self.miCacheLock.acquire(False)
             # Si se obtiene
             if (obtenerMiCache):
-                self.imprimir("Nuleo: "+str(self.id)+", Load tengo mi cache")
                 # Se verifica si no esta en la cache el bloque
                 if(self.estaEnCacheDatos(numBloque)):
-                    self.imprimir("Load Esta el bloque")
                     # Se pasa la palabra de la cache de datos al registro correspondiente
                     self.registros[reg] = self.miCacheDatos[indiceBloque][indicePalabra]
                 # Si no esta en la cache
                 else:
-                    self.imprimir("Nuleo: "+str(self.id)+", Load no esta el bloque")
                     # Se pide el bus de datos
                     obtenerBusDatos = self.busDatos.acquire(False)
                     # Si se obtiene
                     if(obtenerBusDatos):
-                        self.imprimir("Nuleo: "+str(self.id)+", Load tengo el bus")
                         # Se aumenta el ciclo de reloj
                         self.pasarCicloReloj(1)
                         
@@ -341,18 +333,16 @@ class HiloDeNucleo():
                             
                     # Si no se obtiene
                     else:
-                        self.imprimir("Nuleo: "+str(self.id)+", Load no tengo el bus")
                         # Se pasa 1 ciclo de reloj
                         self.pasarCicloReloj(1)
+                        obtenerMiCache = False
                     
                 # Se libera el candado
                 self.miCacheLock.release()
-                
-                #time.sleep(1)
-                
+                self.pasarCicloReloj(1)
+                                
             # Si no se obtiene
             else:
-                self.imprimir("Nuleo: "+str(self.id)+", Load no tengo mi cache")
                 # Se pasa 1 ciclo de reloj
                 self.pasarCicloReloj(1)
                 
@@ -405,7 +395,6 @@ class HiloDeNucleo():
             # Si no se obtiene
             else:
                 self.pasarCicloReloj(1)
-        self.imprimirCI()
         
     # Metodo para saber si un bloque esta en caché de Inst
     def estaEnCacheInst(self, numBloque):
@@ -423,7 +412,7 @@ class HiloDeNucleo():
             return True
         return False
     
-    # Metodo para obtener un hilillo
+    # Metodo para obtener un hilillo del TCB
     def obtenerHilillo(self):
         # Se bloquea la TCB
         self.lockTCB.acquire()
@@ -448,6 +437,8 @@ class HiloDeNucleo():
         # Se retorna true si hay algun hilillo que ejecutar, en caso contrario False
         return hayHilillo
     
+    
+    # Metodo que guarda valor de los registros del nucleo a la tbc y el estado lo pasa a terminado
     def terminarHilillo(self):
         # Se bloquea la TCB
         self.lockTCB.acquire()
@@ -464,44 +455,35 @@ class HiloDeNucleo():
             
     # Metodo para pasar ciclos de reloj
     def pasarCicloReloj(self, n, b = False):
-        # time.sleep(2)
         # Se hace un for por la cantidad de ciclos de reloj que se quieren pasar
         for i in range(0, n):
-            #if(b == True):
-            #    self.imprimir("Antes de la barrera: "+str(self.cicloReloj))
             # Se espera en la barrera al otro nucleo 
             self.barrera.wait()
             # Se aumenta el ciclo de reloj
             self.cicloReloj += 1
-            #if(b == True):
-            #    self.imprimir("Pase la barrera: "+str(self.cicloReloj))
+
             
     # Metodo para imprimir en consola
     def imprimir(self, msj):
         # Se obtiene candado
         self.candadoEscritura.acquire()
         # Se imprime el mensaje
-        print("Nuleo: ", self.id, ", ", msj)
+        print("Nucleo: ", self.id, ", ", msj)
         # Se libera el candado
         self.candadoEscritura.release()
-        
-    # Metodo para imprimir la TCB
+    
+     # Metodo para imprimir la TCB
     def imprimirTCB(self):
-        self.imprimir("***TCB***")
+        print("----  Resultados  ----")
+        print("** TCB **\n\n")
         for item in self.tcb:
-            self.imprimir(item)
-    
-    # Metodo para imprimir la Cache de Instruciones
-    def imprimirCI(self):
-        self.imprimir("Cache de Instrcciones")
-        for item in self.cacheInst:
-            self.imprimir(item)
-    
-    # Metodo para imprimir la Cache de Datos
-    def imprimirCD(self):
-        self.imprimir("Cache de Datos")
-        for item in self.miCacheDatos:
-            self.imprimir(item)
+            print("EL HILILLO ", item['id_hilillo'])
+            print(item)
+            contador = 0
+            for item2 in item['Registros']:
+                print("x"+ str(contador) + ": ", item2)
+                contador+=1
+            print("\n\n\n")
         
 
             

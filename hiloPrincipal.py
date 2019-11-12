@@ -37,7 +37,7 @@ class HiloPrincipal():
     def run(self):
         # Se llena la memoria de Datos
         self.llenarMenDatos()
-        # Se llena la memoria de Instrucciones
+        # Se llena la memoria de Instrucciones y TCB
         self.llenarMenInst()
         # Se crea el nucleo 0
         nucleo0 = hiloDeNucleo.HiloDeNucleo(0, self.tcb, self.memInst, self.memDatos, self.candadoBusInst, 
@@ -57,21 +57,14 @@ class HiloPrincipal():
         nucleo1Thread = threading.Thread(target=nucleo1.run, args=())
         # Se corre el hilo
         nucleo1Thread.start()
-        self.candadoEscritura.acquire()
-        print("Si bueno, quien tiene hambre \n")
-        self.candadoEscritura.release()
         
-        while(self.hilillosFinalizados[0] != c.TERMINADO):
-            pass
-        self.imprimirTCB()
-        print("Mem Datos: \n", self.memDatos)
-        
+    # Metodo para llenar la memoria de datos
     def llenarMenDatos(self):
         for i in range(0,96):
             self.memDatos.append(i*4)
         print("Mem Datos: \n", self.memDatos)
             
-    # Se crea una lista de diccionarios, donde cada indice de la lista es 
+    # Se crea una lista de diccionarios, donde cada indice de la lista es un hilillo
     def llenarTCB(self, pc, nombre_archivo):
         registros = []
         for i in range(0,32):
@@ -80,6 +73,7 @@ class HiloPrincipal():
         'id_hilillo':nombre_archivo, 'estado':0}
         self.tcb.append(diccionario)
     
+    # Metodo para llenar la memoria de instrucciones
     def llenarMenInst(self):
         indiceMemInst = 383
         for arch in range(0,7):
@@ -87,7 +81,6 @@ class HiloPrincipal():
             f = open(nombre_archivo, 'r')
             contenido = f.read()
             instrucciones = contenido.split("\n")
-            #contadorInst = 1
             ponerEnTCB = False
             for instruccion in instrucciones:
                 entero = instruccion.split(" ")
@@ -100,21 +93,9 @@ class HiloPrincipal():
                             ponerEnTCB = True
                     except ValueError:
                         pass
-            # Probando para que funcione el ultimo hilillo
-            #for i in range(0, 12):
-             #   self.memInst.append(0)
             f.close()
         print("Mem Instucciones: \n", self.memInst)
         print("TCB: \n", self.tcb)
-        
-        
-    def imprimirTCB(self):
-        print("----  Resultados  ----")
-        print("** TCB **\n\n")
-        for item in self.tcb:
-            print("EL HILILLO ", item['id_hilillo'])
-            print(item)
-            print("\n\n\n")
                       
                       
                       
