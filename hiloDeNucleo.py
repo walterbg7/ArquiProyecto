@@ -22,6 +22,8 @@ class HiloDeNucleo():
         self.otraCache = otraCache
         # Ciclo de reloj
         self.cicloReloj = 0
+        # Numero de ciclos de reloj por cada hilillo
+        self.cicloRelojHilillo = 0
         # Lista para almacenar las instrucciones
         self.memInst = memInst
         # Lista para almacenar los datos
@@ -423,6 +425,7 @@ class HiloDeNucleo():
             if(hilillo['estado'] == c.NO_EJECUTADO):
                 hayHilillo = True
                 self.imprimir("************************************ Hilillo disponible id: "+str(hilillo['id_hilillo']))
+                self.cicloRelojHilillo = self.cicloReloj
                 # Se cargan los registros de la TCB a los registros del nucleo
                 self.registros = hilillo['Registros']
                 # Se pone el estado en Ejecucion
@@ -445,6 +448,10 @@ class HiloDeNucleo():
         for hilillo in self.tcb:
             if(hilillo['estado'] == c.EJECUCION and hilillo['id_nucleo'] == self.id):
                 self.imprimir("++++++++++++++++++++++ Hilillo terminado id: "+str(hilillo['id_hilillo']))
+                # Se imprime el numero de ciclos de reloj que tomó el hilillo en ejecutarse
+                ciclosTotales = (self.cicloReloj - self.cicloRelojHilillo)
+                self.imprimir("++++ Hilillo " + str(hilillo['id_hilillo']) + " tomó " + str(ciclosTotales) + " ciclos de reloj")
+            
                 # Se cargan los registros del nucleo a la TCB
                 hilillo['Registros'] = self.registros
                 # Se pone el estado en Ejecucion
